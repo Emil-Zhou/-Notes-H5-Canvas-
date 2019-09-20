@@ -1,0 +1,175 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <style>
+        body {
+            margin: 0px;
+            padding: 0px;
+            background-color: #94947c;
+        }
+
+        #controlDiv {
+            position: absolute;
+            font-size: 30pt;
+            font-family: "Calibri";
+        }
+    </style>
+</head>
+
+<body data-rsssl=1>
+    <div id="controlDiv">
+        <label>Dispaly Text:<input id="testText" placeholder="Input the display label" /></label><br/>
+        <label>outline-width : <input id="outlineWidthValue" type="range" min="0" max="40" value="3" step="1"></label> <label id="valueoutlineWidth"></label>
+        <br /><label>font-size : <input id="fontsizeValue" type="range" min="0" max="40" value="30" step="1"></label><label id="valuefontsize"></label>
+        <br /> <label>letterSpacing : <input id="letterSpacingValue" type="range" min="0" max="40" value="1" step="1"></label><label id="valueletterSpacing"></label>
+        <br /><label>rowSpacing : <input id="rowSpacingValue" type="range" min="-100" max="100" value="0" step="1"></label><label id="valuerowSpacing"></label>
+        <br />
+        <label>align left : <input  type="radio" name="align" value="left"></label><br />
+        <label>align center : <input checked type="radio" name="align" value="center"></label><br />
+        <label>align right : <input type="radio" name="align" value="right"></label><br />
+
+    </div>
+    <canvas id="myCanvas" width="11111" height="1000"></canvas>
+    <script>
+        var inp = document.querySelectorAll('input');
+
+        var redraw = function () {
+
+            var getHeight = function (font) {
+                var height = 0;
+
+                var span = document.createElement('span');
+                span.textContent = 'M';
+                span.style.margin = span.style.padding = '0 !important';
+                span.style.position = 'absolute !important';
+                span.style.left = '-99999px !important';
+
+                span.style.font = font;
+                document.body.appendChild(span);
+                height = span.offsetHeight;
+                document.body.removeChild(span);
+
+                return height;
+            };
+
+            var backs = ["#aac6ee90", "#aac60090", "#aac6ee90", "#aac60090"]
+
+            var words = [
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                "abcdefghijklmnopqrstuvwxyz",
+                "United",
+                "States"
+            ]
+
+            var testText= document.getElementById("testText").value;
+            if(testText&&testText!=="")
+            {
+                words=[testText];
+            }
+
+            var fontSize = document.getElementById("fontsizeValue").value;
+            document.getElementById("valuefontsize").innerHTML=fontSize;
+
+            var font = fontSize + "pt Calibri";
+
+            var strokeWidth = parseFloat(document.getElementById("outlineWidthValue").value);
+            document.getElementById("valueoutlineWidth").innerHTML= strokeWidth;
+
+            var letterSpacing = parseFloat(document.getElementById("letterSpacingValue").value);
+            document.getElementById("valueletterSpacing").innerHTML= letterSpacing;
+
+            var rowSpacing = parseFloat(document.getElementById("rowSpacingValue").value);
+            document.getElementById("valuerowSpacing").innerHTML= rowSpacing;
+
+
+            var align = "center";
+            var radios = document.getElementsByName('align');
+            for (var i = 0, length = radios.length; i < length; i++) {
+                if (radios[i].checked) {
+                    // do whatever you want with the checked radio
+                    align = radios[i].value;
+                    // only one radio can be logically checked, don't check the rest
+                    break;
+                }
+            }
+
+            //Begin
+            var canvas = document.getElementById('myCanvas');
+            canvas.style.letterSpacing = letterSpacing + "px";
+            var context = canvas.getContext('2d');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.font = font;
+            context.lineWidth = strokeWidth;
+            context.lineJoin = "round";
+
+            var widths = [];
+            var maxWidth = 0;
+            for (var i = 0; i < words.length; i++) {
+                let word = words[i];
+                // letter Spacing是跟随间隔之前的字母，末尾字符携带的间隔是多余的，因为后方没有字符了。
+                // 这里的textWidth 携带了多余的letter Spacing
+                var textWidth = Math.ceil(context.measureText(word).width);
+                widths.push(textWidth);
+                if (textWidth > maxWidth) {
+                    maxWidth = textWidth;
+                }
+                console.log(word + ":" + textWidth);
+
+            }
+            var canvasWidth = Math.ceil(maxWidth - letterSpacing + strokeWidth);
+            var canvasHeight = getHeight(font) + strokeWidth ;
+
+            var x = 50;
+            var y = 400 - canvasHeight-rowSpacing;
+
+            for (var i = 0; i < words.length; i++) {
+                y += canvasHeight+rowSpacing;
+                let word = words[i];
+
+                var letterSpacingOffset = letterSpacing;
+                if (word.length > 1) {
+                    letterSpacingOffset = letterSpacing;
+                }
+                var alignOffsetX = 0;
+                var canvasTextAlign = "center";
+                if (align == "left") {
+                    alignOffsetX = Math.ceil(strokeWidth / 2);
+                    canvasTextAlign = "left";
+                }
+                else if (align == "right") {
+                    alignOffsetX = Math.floor(canvasWidth - strokeWidth / 2 + letterSpacing);
+                    canvasTextAlign = "right";
+                }
+                else {
+                    alignOffsetX = Math.floor((canvasWidth) / 2 + letterSpacingOffset / 2);
+                }
+
+                context.fillStyle = backs[i];
+                 context.fillRect(x, y, canvasWidth, canvasHeight);
+               
+                context.textAlign = canvasTextAlign;
+                context.textBaseline = 'middle';
+                var anchorX = x + alignOffsetX;
+                var anchorY = y + canvasHeight / 2;
+
+                context.strokeStyle = '#ffffff';
+                context.strokeText(word, anchorX, anchorY);
+                context.fillStyle = '#5d869b';
+                context.fillText(word, anchorX, anchorY);
+
+                context.fillStyle = "#00ff00";
+                context.fillRect(x, y + canvasHeight / 2, canvasWidth, 2);
+                context.fillRect(x + (canvasWidth / 2), y, 1, canvasHeight);
+
+            }
+        }
+        redraw();
+        inp.forEach(element => {
+            element.addEventListener('input', redraw, false)
+        });
+
+    </script>
+</body>
+
+</html>
